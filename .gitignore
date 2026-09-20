@@ -1,0 +1,9 @@
+# Secrets - never commit these
+.env
+
+# Docker artifacts
+*.log
+
+# OS junk
+.DS_Store
+Thumbs.db

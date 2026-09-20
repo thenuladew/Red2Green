@@ -1,0 +1,101 @@
+# ============================================================
+#  Red2Green — DevSecOps Pipeline
+#  Runs automatically on every push or pull request to main.
+#  If any security gate fails, the whole pipeline goes RED ❌
+# ============================================================
+
+name: DevSecOps Pipeline
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+
+  # ──────────────────────────────────────────────────────────
+  # GATE 1: SECRETS SCANNING — Gitleaks
+  # Detects passwords, API keys, tokens accidentally in code.
+  # This gate WILL FAIL and block the pipeline if found. ❌
+  # ──────────────────────────────────────────────────────────
+  secrets-scan:
+    name: "Gate 1 — Secrets Scanning (Gitleaks)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history needed for Gitleaks
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ──────────────────────────────────────────────────────────
+  # GATE 2: SAST — Semgrep
+  # Scans PHP source code for security bugs like SQL injection,
+  # XSS, command injection etc. Fails pipeline if found. ❌
+  # ──────────────────────────────────────────────────────────
+  sast-scan:
+    name: "Gate 2 — SAST Code Scan (Semgrep)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Semgrep
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/php
+            p/owasp-top-ten
+            p/command-injection
+            p/sql-injection
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
+  # ──────────────────────────────────────────────────────────
+  # GATE 3: SCA — Trivy Filesystem Scan
+  # Checks third-party libraries/dependencies for known CVEs.
+  # Reports vulnerabilities but does not block (informational).
+  # ──────────────────────────────────────────────────────────
+  sca-scan:
+    name: "Gate 3 — Dependency Scan (Trivy SCA)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "table"
+          severity: "CRITICAL,HIGH"
+          exit-code: "0"  # Informational — does not block pipeline
+
+  # ──────────────────────────────────────────────────────────
+  # GATE 4: CONTAINER SCAN — Trivy Image Scan
+  # Builds the Docker image then scans it for OS-level CVEs.
+  # Fails pipeline on CRITICAL vulnerabilities. ❌
+  # ──────────────────────────────────────────────────────────
+  container-scan:
+    name: "Gate 4 — Container Image Scan (Trivy)"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t red2green:test .
+
+      - name: Run Trivy image scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "red2green:test"
+          format: "table"
+          severity: "CRITICAL"
+          exit-code: "1"  # BLOCKS pipeline if CRITICAL CVEs found ❌
