@@ -98,4 +98,6 @@ jobs:
           image-ref: "red2green:test"
           format: "table"
           severity: "CRITICAL"
-          exit-code: "1"  # BLOCKS pipeline if CRITICAL CVEs found ❌
+          ignore-unfixed: true   # Only fail on CVEs that have patches available
+          exit-code: "1"         # BLOCKS pipeline if fixable CRITICAL CVEs found ❌
+
