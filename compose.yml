@@ -10,15 +10,15 @@ services:
   dvwa:
     build: .
     image: ghcr.io/digininja/dvwa:latest
-    # Change `always` to `build` to build from local source
-    pull_policy: always
+    # We don't want to force a pull or build if it fails credentials
+    pull_policy: missing
     environment:
       - DB_SERVER=${DB_SERVER}
     depends_on:
       - db
     # Uncomment the next 2 lines to serve local source
-    # volumes:
-    #   - ./:/var/www/html
+    volumes:
+      - ./:/var/www/html
     networks:
       - dvwa
     ports:
