@@ -24,13 +24,17 @@ if( isset( $_POST[ 'Change' ] ) && ( $_POST[ 'step' ] == '1' ) ) {
 	else {
 		// CAPTCHA was correct. Do both new passwords match?
 		if( $pass_new == $pass_conf ) {
+			// Mark that this session passed the CAPTCHA, and store the
+			// passwords server-side instead of trusting hidden fields later
+			$_SESSION[ 'captcha_verified' ] = true;
+			$_SESSION[ 'pass_new' ]         = $pass_new;
+			$_SESSION[ 'pass_conf' ]        = $pass_conf;
+
 			// Show next stage for the user
 			$html .= "
 				<pre><br />You passed the CAPTCHA! Click the button to confirm your changes.<br /></pre>
 				<form action=\"#\" method=\"POST\">
 					<input type=\"hidden\" name=\"step\" value=\"2\" />
-					<input type=\"hidden\" name=\"password_new\" value=\"{$pass_new}\" />
-					<input type=\"hidden\" name=\"password_conf\" value=\"{$pass_conf}\" />
 					<input type=\"submit\" name=\"Change\" value=\"Change\" />
 				</form>";
 		}
@@ -46,9 +50,17 @@ if( isset( $_POST[ 'Change' ] ) && ( $_POST[ 'step' ] == '2' ) ) {
 	// Hide the CAPTCHA form
 	$hide_form = true;
 
-	// Get input
-	$pass_new  = $_POST[ 'password_new' ];
-	$pass_conf = $_POST[ 'password_conf' ];
+	// Require that step 1 actually completed the CAPTCHA in THIS session
+	if( empty( $_SESSION[ 'captcha_verified' ] ) || $_SESSION[ 'captcha_verified' ] !== true ) {
+		$html .= "<pre><br />CAPTCHA verification is required before changing your password. Please start again.</pre>";
+		$hide_form = false;
+		return;
+	}
+
+	// Use the passwords captured in step 1, never trust client-supplied
+	// hidden fields for the sensitive action
+	$pass_new  = $_SESSION[ 'pass_new' ];
+	$pass_conf = $_SESSION[ 'pass_conf' ];
 
 	// Check to see if both password match
 	if( $pass_new == $pass_conf ) {
@@ -62,6 +74,11 @@ if( isset( $_POST[ 'Change' ] ) && ( $_POST[ 'step' ] == '2' ) ) {
 
 		// Feedback for the end user
 		$html .= "<pre>Password Changed.</pre>";
+
+		// Clear the one-time verification and stored passwords
+		unset( $_SESSION[ 'captcha_verified' ] );
+		unset( $_SESSION[ 'pass_new' ] );
+		unset( $_SESSION[ 'pass_conf' ] );
 	}
 	else {
 		// Issue with the passwords matching
