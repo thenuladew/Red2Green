@@ -53,8 +53,6 @@ jobs:
             p/owasp-top-ten
             p/command-injection
             p/sql-injection
-        env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
   # ──────────────────────────────────────────────────────────
   # GATE 3: SCA — Trivy Filesystem Scan
