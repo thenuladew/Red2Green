@@ -59,10 +59,10 @@ Each vulnerability was resolved on a dedicated branch and verified by the CI/CD 
 
 | # | Vulnerability | Branch | Fix Applied |
 |---|---|---|---|
-| 1 | Broken Access Control (BAC) | `Broken-Access-Control` | Replaced client-side `$_COOKIE` check with server-side `$_SESSION` validation |
-| 2 | SQL Injection (SQLi) | `IT24102685` | Replaced string concatenation with parameterised queries (`mysqli_prepare`) |
-| 3 | Stored XSS | `IT24102879` | Sanitized output using `htmlspecialchars()` to neutralize script execution |
-| 4 | Brute Force | `IT24102931` | Implemented session-based login attempt tracking with lockout after 3 failures |
+| 1 | Broken Access Control (BAC) | Replaced client-side `$_COOKIE` check with server-side `$_SESSION` validation |
+| 2 | SQL Injection (SQLi) | Replaced string concatenation with parameterised queries (`mysqli_prepare`) |
+| 3 | Stored XSS | Sanitized output using `htmlspecialchars()` to neutralize script execution |
+| 4 | Brute Force | Implemented session-based login attempt tracking with lockout after 3 failures |
 
 ---
 
